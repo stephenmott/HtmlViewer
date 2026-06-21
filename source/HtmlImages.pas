@@ -35,7 +35,11 @@ uses
 {$ifdef LCL}
   LclIntf, IntfGraphics, FpImage, LclType, LResources, LMessages, HtmlMisc,
 {$else}
+{$ifdef Compiler37_Plus}
+  Windows, Vcl.Imaging.jpeg, // 'Jpeg' alias removed in Delphi 13
+{$else}
   Windows, Jpeg,
+{$endif}
 {$endif}
   Contnrs, Graphics, Forms, Controls,
 {$ifdef UseGenerics}

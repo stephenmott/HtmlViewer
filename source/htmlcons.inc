@@ -173,6 +173,14 @@ are covered by separate copyright notices located in those modules.
                                               {$define Compiler35_Plus}
                                               {$ifdef ver350}
                                               {$else}
+                                                {$define Compiler36_Plus}
+                                                {$ifdef ver360}
+                                                {$else}
+                                                  {$define Compiler37_Plus}
+                                                  {$ifdef ver370}
+                                                  {$else}
+                                                  {$endif}
+                                                {$endif}
                                               {$endif}
                                             {$endif}
                                           {$endif}
