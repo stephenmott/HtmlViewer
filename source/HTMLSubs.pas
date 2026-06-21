@@ -925,6 +925,7 @@ type
     // BEGIN: this area is copied by move() in CreateCopy() - NO string types allowed!
     MargArray: ThtMarginArray;
     FGColor: Integer;
+    FBorderRadius: Integer; // border-radius in pixels (0 = square); within the CreateCopy move() region
     HasBorderStyle: Boolean;
 
     PRec: PtPositionRec; // background image position
@@ -4885,6 +4886,9 @@ begin
     Prop.GetVMarginArray(MargArrayO);
   HasBorderStyle := Prop.HasBorderStyle;
   FGColor := Prop.Props[Color];
+  FBorderRadius := 0;
+  if VarIsStr(Prop.Props[piBorderRadius]) then
+    FBorderRadius := LengthConv(Prop.Props[piBorderRadius], False, 0, Prop.EmSize, Prop.ExSize, 0, Document.PixelsPerInch);
 
   BlockTitle := Prop.PropTitle;
   if not (Self is TBodyBlock) and not (Self is TTableAndCaptionBlock)
@@ -6196,7 +6200,14 @@ begin
             TiledImage.PrintUnstretched(Canvas, PdRect.Left, FT, IW, IH, 0, IT, HasBackgroundColor and Document.PrintBackground )
         else
           if not Document.Printing or Document.PrintBackground then
-            Canvas.FillRect(Rect(PdRect.Left, FT, PdRect.Right, FT + IH));
+            if (FBorderRadius > 0) and (Canvas.Brush.Style = bsSolid) then
+            begin {rounded background fill}
+              Canvas.Pen.Style := psSolid;
+              Canvas.Pen.Color := Canvas.Brush.Color;
+              Canvas.RoundRect(PdRect.Left, FT, PdRect.Right, FT + IH, 2 * FBorderRadius, 2 * FBorderRadius);
+            end
+            else
+              Canvas.FillRect(Rect(PdRect.Left, FT, PdRect.Right, FT + IH));
       except
       end;
     end;
@@ -6253,13 +6264,42 @@ begin
 end;
 
 procedure TBlock.DrawBlockBorder(Canvas: TCanvas; const ORect, IRect: TRect);
+var
+  W: Integer;
 begin
   if HasBorderStyle then
     if (ORect.Left <> IRect.Left) or (ORect.Top <> IRect.Top) or (ORect.Right <> IRect.Right) or (ORect.Bottom <> IRect.Bottom) then
-      DrawBorder(Canvas, ORect, IRect,
-        htColors(MargArray[BorderLeftColor], MargArray[BorderTopColor], MargArray[BorderRightColor], MargArray[BorderBottomColor]),
-        htStyles(ThtBorderStyle(MargArray[BorderLeftStyle]), ThtBorderStyle(MargArray[BorderTopStyle]), ThtBorderStyle(MargArray[BorderRightStyle]), ThtBorderStyle(MargArray[BorderBottomStyle])),
-        MargArray[BackgroundColor], Document.Printing, Document.ThemedColorToRGB)
+      // rounded path: only for a uniform, solid border (same width/colour/style on all 4 sides);
+      // anything fancier falls back to the square DrawBorder so it still renders correctly.
+      if (FBorderRadius > 0)
+        and (ThtBorderStyle(MargArray[BorderLeftStyle]) = bssSolid)
+        and (ThtBorderStyle(MargArray[BorderTopStyle]) = bssSolid)
+        and (ThtBorderStyle(MargArray[BorderRightStyle]) = bssSolid)
+        and (ThtBorderStyle(MargArray[BorderBottomStyle]) = bssSolid)
+        and (MargArray[BorderLeftColor] = MargArray[BorderTopColor])
+        and (MargArray[BorderTopColor] = MargArray[BorderRightColor])
+        and (MargArray[BorderRightColor] = MargArray[BorderBottomColor])
+        and ((IRect.Left - ORect.Left) = (ORect.Right - IRect.Right))
+        and ((IRect.Top - ORect.Top) = (ORect.Bottom - IRect.Bottom))
+        and ((IRect.Left - ORect.Left) = (IRect.Top - ORect.Top)) then
+      begin
+        W := IRect.Left - ORect.Left;
+        if W < 1 then
+          W := 1;
+        Canvas.Brush.Style := bsClear;
+        Canvas.Pen.Style := psSolid;
+        Canvas.Pen.Width := W;
+        Canvas.Pen.Color := Document.ThemedColorToRGB(MargArray[BorderTopColor], htseClient);
+        // pen is centred on the path, so inset the box by half the width
+        Canvas.RoundRect(ORect.Left + W div 2, ORect.Top + W div 2,
+          ORect.Right - (W div 2), ORect.Bottom - (W div 2),
+          2 * FBorderRadius, 2 * FBorderRadius);
+      end
+      else
+        DrawBorder(Canvas, ORect, IRect,
+          htColors(MargArray[BorderLeftColor], MargArray[BorderTopColor], MargArray[BorderRightColor], MargArray[BorderBottomColor]),
+          htStyles(ThtBorderStyle(MargArray[BorderLeftStyle]), ThtBorderStyle(MargArray[BorderTopStyle]), ThtBorderStyle(MargArray[BorderRightStyle]), ThtBorderStyle(MargArray[BorderBottomStyle])),
+          MargArray[BackgroundColor], Document.Printing, Document.ThemedColorToRGB)
 end;
 
 procedure TBlock.DrawTheList(Canvas: TCanvas; const ARect: TRect; ClipWidth, X, XRef, YRef: Integer);

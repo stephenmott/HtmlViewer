@@ -6,7 +6,7 @@
 <style type="text/css">
   body  { font-family: "Segoe UI", Verdana, sans-serif; font-size: 17px;
           color: #222222; background: #f4f6f8; margin: 0; padding: 28px; }
-  .card { background: #ffffff; border: 1px solid #d0d7de; padding: 20px 28px; }
+  .card { background: #ffffff; border: 1px solid #d0d7de; border-radius: 12px; padding: 20px 28px; }
   h1    { color: #2b5797; margin: 0; font-size: 34px; }
   .sub  { color: #777777; margin: 4px 0 18px 0; font-size: 15px; }
   h3    { color: #2b5797; margin-bottom: 4px; font-size: 21px; }
@@ -15,6 +15,8 @@
   th    { background: #eef2f6; }
   a     { color: #2b5797; }
   code  { background: #eef2f6; padding: 1px 4px; }
+  .summary { background: #eef7ee; border: 2px solid #4a8f4a; border-radius: 10px; padding: 12px 16px; margin-top: 14px; }
+  .filled  { background: #2b5797; color: #ffffff; border-radius: 16px; padding: 12px 16px; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -43,6 +45,10 @@
       <li><a href="https://info.cern.ch/hypertext/WWW/TheProject.html">The first web page (CERN, 1991)</a></li>
       <li><a href="https://www.w3.org/TR/1998/REC-html40-19980424/">HTML 4.0 specification</a> &ndash; large, static</li>
     </ul>
+
+    <h3>border-radius (new)</h3>
+    <div class="summary"><b>Order summary</b> &ndash; rounded box with a 2px solid border.</div>
+    <div class="filled">Filled rounded box, no border.</div>
 
     <p class="sub">Or type any URL in the address bar above.</p>
   </div>

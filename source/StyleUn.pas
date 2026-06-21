@@ -107,6 +107,7 @@ type
     ListStyleType, ListStyleImage, Float, Clear, TextIndent,
     PageBreakBefore, PageBreakAfter, PageBreakInside, TextTransform,
     WordWrap, FontVariant, BorderCollapse, OverFlow, piDisplay, piEmptyCells,
+    piBorderRadius,
     piWhiteSpace,
 
     // the below properties are short hands
@@ -152,6 +153,7 @@ const
     'list-style-type', 'list-style-image', 'float', 'clear', 'text-indent',
     'page-break-before', 'page-break-after', 'page-break-inside', 'text-transform',
     'word-wrap', 'font-variant', 'border-collapse', 'overflow', 'display', 'empty-cells',
+    'border-radius',
     'white-space',
 
     // short hand names
@@ -960,7 +962,8 @@ begin
         //BorderColor, BorderStyle,
         BorderCollapse,
         PageBreakBefore, PageBreakAfter, PageBreakInside,
-        Clear, Float, Position, OverFlow, piDisplay:
+        Clear, Float, Position, OverFlow, piDisplay,
+        piBorderRadius: // not an inherited property
           ; {do nothing}
       else
         Props[I] := Source.Props[I];
