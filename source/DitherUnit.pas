@@ -231,8 +231,13 @@ procedure Error(msg: string);
   begin
     Result := nil; // ToDo: Fix it. Why is there assy?
 {$else}
+  {$ifdef CPUX64}
+  begin
+    Result := System.ReturnAddress; // Win64-safe: x86 asm cannot read the return address
+  {$else}
   asm  // From classes.pas
     MOV		EAX,[EBP+4] // sysutils.pas says [EBP-4] !
+  {$endif}
 {$endif}
   end;
 

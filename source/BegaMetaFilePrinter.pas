@@ -183,7 +183,7 @@ procedure TBegaPrintableControl.Print(Canvas: TCanvas;
   var PrintedWidth, PrintedHeight: Integer);
 begin
   IntersectClipRect(Canvas.Handle, 0, 0, FControl.Width, FControl.Height);
-  FControl.Perform(WM_PAINT, Integer(Canvas.Handle), 0);
+  FControl.Perform(WM_PAINT, WPARAM(Canvas.Handle), 0);
 end;
 
 { TBegaPrintableGraphic }
