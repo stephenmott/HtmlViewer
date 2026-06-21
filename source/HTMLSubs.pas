@@ -834,6 +834,8 @@ type
     TextWidth: Integer;
     WhiteSpaceStyle: ThtWhiteSpaceStyle;
     FirstLineIndent: Integer;             // Issue 365: public for TRichView
+    FHasTextShadow: Boolean;
+    FTextShadowX, FTextShadowY, FTextShadowColor: Integer; // text-shadow (section-level)
     property Buff: PWideChar read FBuff;  // Issue 365: public for TRichView
   protected
     constructor Create(Parent: TCellBasic); overload;
@@ -11552,6 +11554,7 @@ var
   S, C: ThtString;
 //  Clr: ThtClearStyle;
   Percent: Boolean;
+  LBlur, LAlpha: Integer;
 begin
 {$IFDEF JPM_DEBUGGING}
   CodeSite.EnterMethod(Self,'TSection.Create');
@@ -11591,6 +11594,12 @@ begin
 {$ENDIF}
   end;
   Fonts.Add(FO);
+
+  FHasTextShadow := False;
+  FTextShadowX := 0; FTextShadowY := 0; FTextShadowColor := clGray;
+  if VarIsStr(Prop.Props[piTextShadow]) then
+    FHasTextShadow := ParseBoxShadow(Prop.Props[piTextShadow], Prop.EmSize, Prop.ExSize, Document.PixelsPerInch,
+      FTextShadowX, FTextShadowY, LBlur, FTextShadowColor, LAlpha); // reuse: "<x> <y> [blur] <color>" (blur/alpha ignored for text)
 
   LineHeight := Prop.GetLineHeight(Abs(FO.TheFont.Height));
   if FirstItem then
@@ -11664,6 +11673,10 @@ begin
   FLPercent := T.FLPercent;
   BreakWord := T.BreakWord;
   WhiteSpaceStyle := T.WhiteSpaceStyle;
+  FHasTextShadow := T.FHasTextShadow;
+  FTextShadowX := T.FTextShadowX;
+  FTextShadowY := T.FTextShadowY;
+  FTextShadowColor := T.FTextShadowColor;
 end;
 
 {----------------TSection.Destroy}
@@ -13528,7 +13541,7 @@ var
     FO: TFontObj;
     ARect: TRect;
     Inverted, NewCP: Boolean;
-    ForeColor, BackColor: TColor;
+    ForeColor, BackColor, ShadowSave: TColor;
     BkMode: Integer;
     CPx, CPy, CP1x: Integer;
     BR: ThtBorderRec;
@@ -13979,6 +13992,14 @@ var
               ' ', BrkCh:
                 Dec(Tmp); {at end of line, don't show space or break}
             end;
+
+          if FHasTextShadow then
+          begin {hard (no-blur) text shadow: draw the run offset in the shadow colour, behind the real text}
+            ShadowSave := Canvas.Font.Color;
+            Canvas.Font.Color := Document.ThemedColorToRGB(FTextShadowColor, htseFont);
+            ExtTextOutW(Canvas.Handle, CPx + FTextShadowX, CPy + FTextShadowY, 0, nil, Start, Tmp, pDx);
+            Canvas.Font.Color := ShadowSave;
+          end;
 
           if (WhiteSpaceStyle in [wsPre, wsPreLine, wsNoWrap]) and not OwnerBlock.HideOverflow then
           begin {so will clip in Table cells}

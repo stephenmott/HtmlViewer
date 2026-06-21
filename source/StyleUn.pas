@@ -111,6 +111,7 @@ type
     piBoxShadow,
     piOutline,
     piOutlineOffset,
+    piTextShadow,
     piWhiteSpace,
 
     // the below properties are short hands
@@ -160,6 +161,7 @@ const
     'box-shadow',
     'outline',
     'outline-offset',
+    'text-shadow',
     'white-space',
 
     // short hand names
