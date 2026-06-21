@@ -390,6 +390,14 @@ function LengthConv(const Str: ThtString; Relative: Boolean; Base, EmSize, ExSiz
 
 procedure CalcAutoMinMaxConstraints(W, H, MinW, MaxW, MinH, MaxH: Integer; out ResW, ResH: Integer);
 
+var
+  // Context for relative length units that LengthConv cannot resolve from its
+  // own parameters. ThtDocument sets these before each layout pass; a value of
+  // 0 disables the unit (rem then falls back to em, vw/vh resolve to 0).
+  ThtRootEmPx: Integer = 0;         // pixels per 'rem' (root element font size)
+  ThtViewportWidthPx: Integer = 0;  // pixels, for 'vw' / 'vmin' / 'vmax'
+  ThtViewportHeightPx: Integer = 0; // pixels, for 'vh' / 'vmin' / 'vmax'
+
 implementation
 uses
 {$ifdef Compiler24_Plus}
@@ -4252,6 +4260,31 @@ begin
       V := V * EmSize
     else if U = 'ex' then
       V := V * ExSize
+    else if U = 'rem' then
+    begin
+      if ThtRootEmPx > 0 then
+        V := V * ThtRootEmPx
+      else
+        V := V * EmSize {fall back to em when no root context}
+    end
+    else if U = 'vw' then
+      V := V * ThtViewportWidthPx * f_pc {1vw = 1% of viewport width}
+    else if U = 'vh' then
+      V := V * ThtViewportHeightPx * f_pc {1vh = 1% of viewport height}
+    else if U = 'vmin' then
+    begin
+      if ThtViewportWidthPx < ThtViewportHeightPx then
+        V := V * ThtViewportWidthPx * f_pc
+      else
+        V := V * ThtViewportHeightPx * f_pc
+    end
+    else if U = 'vmax' then
+    begin
+      if ThtViewportWidthPx > ThtViewportHeightPx then
+        V := V * ThtViewportWidthPx * f_pc
+      else
+        V := V * ThtViewportHeightPx * f_pc
+    end
     else
       V := Default;
     Result := Trunc(V); // BG, 14.12.2011: issue 104: avoid too wide "50%". Replace Round() with Trunc().

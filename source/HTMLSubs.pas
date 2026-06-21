@@ -7970,6 +7970,13 @@ begin
   Inc(CycleNumber);
   TableNestLevel := 0;
   InLogic2 := False;
+  // Publish context for relative length units (rem / vw / vh / vmin / vmax)
+  // that LengthConv resolves from module state. (Single document at a time;
+  // for nested frames the innermost layout pass wins, which is acceptable.)
+  if Styles <> nil then
+    ThtRootEmPx := Styles.RootEmSize;
+  ThtViewportWidthPx := Width;
+  ThtViewportHeightPx := AHeight;
   if Assigned(Timer) then
     Timer.Enabled := False;
   for I := 0 to HtmlFormList.Count - 1 do
