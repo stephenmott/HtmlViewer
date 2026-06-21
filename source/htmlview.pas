@@ -257,6 +257,13 @@ type
     FScrollBars: ThtScrollStyle;
     FOptions: THtmlViewerOptions;
 
+    // Responsive @media: width/height breakpoints collected at parse time so a
+    // resize that crosses one can re-parse and re-evaluate the media queries.
+    FMediaWidths: array of Integer;
+    FMediaHeights: array of Integer;
+    FMediaParseWidth: Integer;
+    FMediaParseHeight: Integer;
+
     // events (also copied in CreateCopy)
     FOnCreateIFrameControl: TCreateIFrameControlEvent;
     FOnFilenameExpanded: TFilenameExpanded; //BG, 19.09.2010: Issue 7: Slow UNC Lookups for Images
@@ -360,6 +367,9 @@ type
     procedure ImagesInsertedTimer(Sender: TObject);
     procedure Layout;
     procedure MatchMediaQuery(Sender: TObject; const MediaQuery: ThtMediaQuery; var MediaMatchesQuery: Boolean);
+    procedure AddMediaBreak(IsWidth: Boolean; Value: Integer);
+    procedure ResetMediaBreaks;
+    function MediaBreakpointCrossed: Boolean;
     procedure Parsed(const Title, Base, BaseTarget: ThtString);
     procedure ParseXHtml;
     procedure ParseHtml;
@@ -1103,6 +1113,7 @@ procedure THtmlViewer.ParseXHtml;
 var
   Parser: THtmlParser;
 begin
+  ResetMediaBreaks;
   Parser := THtmlParser.Create(FDocument);
   try
     Parser.IsXHTML := True;
@@ -1118,6 +1129,7 @@ procedure THtmlViewer.ParseHtml;
 var
   Parser: THtmlParser;
 begin
+  ResetMediaBreaks;
   Parser := THtmlParser.Create(FDocument);
   try
     Parser.ParseHtml(FSectionList, OnInclude, OnSoundRequest, HandleMeta, OnLink, MatchMediaQuery);
@@ -1835,7 +1847,13 @@ begin
   if IsProcessing then
     DoScrollBars
   else
+  begin
     Layout;
+    // If the new size crossed a width/height @media breakpoint, re-parse so the
+    // media queries re-evaluate (Retext reloads FText and keeps the position).
+    if (FText <> '') and MediaBreakpointCrossed then
+      Retext(rtmNewText);
+  end;
   ScrollTo(VScrollBar.Position); {keep aligned to limits}
   HScrollBar.Position := Max(0, Min(HScrollBar.Position, HScrollBar.Max - PaintPanel.Width));
 {$ifdef LCL}
@@ -4014,7 +4032,9 @@ procedure THtmlViewer.MatchMediaQuery(Sender: TObject; const MediaQuery: ThtMedi
         Result := TryStrToInt(Expression.Expression, Num) and (Num >= 0) and (Num <= MaxValue) and Compared(Value, Num);
     end;
 
-    function ComparedToLength(Value, Base: Integer): Boolean;
+    function ComparedToLength(Value, Base: Integer; RecordDim: Integer = 0): Boolean;
+    // RecordDim: 0 = don't record (e.g. device size, fixed on resize),
+    //            1 = viewer width, 2 = viewer height.
     var
       Len: Integer;
     begin
@@ -4024,14 +4044,28 @@ procedure THtmlViewer.MatchMediaQuery(Sender: TObject; const MediaQuery: ThtMedi
       begin
         Len := Abs(Font.Size);
         Len := LengthConv(Expression.Expression, False, Base, Len, Len div 2, -1, PixelsPerInch);
+        // Remember the breakpoint so a later resize that crosses it can re-parse
+        // and re-evaluate the media query. The boundary where the result flips
+        // is at Len for '>=' and at Len+1 for '<=' (so a >= Boundary test flips
+        // at the same place the real comparison does).
+        if (RecordDim <> 0) and (Len >= 0) then
+          case Expression.Oper of
+            moGe: AddMediaBreak(RecordDim = 1, Len);
+            moLe: AddMediaBreak(RecordDim = 1, Len + 1);
+            moEq:
+              begin
+                AddMediaBreak(RecordDim = 1, Len);
+                AddMediaBreak(RecordDim = 1, Len + 1);
+              end;
+          end;
         Result := (Len >= 0) and Compared(Value, Len);
       end;
     end;
 
   begin
     case Expression.Feature of
-      mfWidth       : Result := ComparedToLength(Self.Width   , Self.Width   );
-      mfHeight      : Result := ComparedToLength(Self.Height  , Self.Height  );
+      mfWidth       : Result := ComparedToLength(Self.Width   , Self.Width   , 1);
+      mfHeight      : Result := ComparedToLength(Self.Height  , Self.Height  , 2);
       mfDeviceWidth : Result := ComparedToLength(Screen.Width , Screen.Width );
       mfDeviceHeight: Result := ComparedToLength(Screen.Height, Screen.Height);
 
@@ -4079,6 +4113,56 @@ begin
   end;
   if OK then
     MediaMatchesQuery := True;
+end;
+
+procedure THtmlViewer.AddMediaBreak(IsWidth: Boolean; Value: Integer);
+var
+  I: Integer;
+begin
+  if Value < 0 then
+    Exit;
+  if IsWidth then
+  begin
+    for I := 0 to High(FMediaWidths) do
+      if FMediaWidths[I] = Value then
+        Exit;
+    SetLength(FMediaWidths, Length(FMediaWidths) + 1);
+    FMediaWidths[High(FMediaWidths)] := Value;
+  end
+  else
+  begin
+    for I := 0 to High(FMediaHeights) do
+      if FMediaHeights[I] = Value then
+        Exit;
+    SetLength(FMediaHeights, Length(FMediaHeights) + 1);
+    FMediaHeights[High(FMediaHeights)] := Value;
+  end;
+end;
+
+procedure THtmlViewer.ResetMediaBreaks;
+// Called at the start of each parse: forget the previous breakpoints and record
+// the viewer size the upcoming media queries are being evaluated against.
+begin
+  SetLength(FMediaWidths, 0);
+  SetLength(FMediaHeights, 0);
+  FMediaParseWidth := Width;
+  FMediaParseHeight := Height;
+end;
+
+function THtmlViewer.MediaBreakpointCrossed: Boolean;
+// True if the current size is on the other side of any width/height breakpoint
+// than it was when the document was last parsed (so the @media results changed).
+var
+  I: Integer;
+begin
+  Result := True;
+  for I := 0 to High(FMediaWidths) do
+    if (FMediaParseWidth >= FMediaWidths[I]) <> (Width >= FMediaWidths[I]) then
+      Exit;
+  for I := 0 to High(FMediaHeights) do
+    if (FMediaParseHeight >= FMediaHeights[I]) <> (Height >= FMediaHeights[I]) then
+      Exit;
+  Result := False;
 end;
 
 //-- BG ---------------------------------------------------------- 16.11.2011 --
@@ -5422,16 +5506,24 @@ end;
 procedure THtmlViewer.Retext; {reload the current text}
 var
   Pos, Sel, Len: Integer;
+  SavedFile: ThtString;
+  SavedType: ThtmlFileType;
 begin
   if FMustRetext <> rtmNone then
   begin
     Pos := Position;
     Sel := SelStart;
     Len := SelLength;
+    // LoadFromString resets FCurrentFile from its (empty) reference; preserve
+    // it so we keep reloading the same document (e.g. for relative links).
+    SavedFile := FCurrentFile;
+    SavedType := FCurrentFileType;
     case FMustRetext of
       rtmRetext: LoadFromString(Text);
       rtmNewText: LoadFromString(FText);
     end;
+    FCurrentFile := SavedFile;
+    FCurrentFileType := SavedType;
     FMustRetext := rtmNone;
     Position := Pos;
     SelStart := Sel;
