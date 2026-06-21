@@ -928,6 +928,8 @@ type
     FBorderRadius: Integer; // border-radius in pixels (0 = square); within the CreateCopy move() region
     FHasShadow: Boolean;
     FShadowX, FShadowY, FShadowBlur, FShadowColor, FShadowAlpha: Integer; // box-shadow (move() region)
+    FHasOutline: Boolean;
+    FOutlineWidth, FOutlineColor: Integer; // outline (move() region)
     HasBorderStyle: Boolean;
 
     PRec: PtPositionRec; // background image position
@@ -4944,6 +4946,86 @@ begin
   Result := NumCount >= 2; // need at least offset-x and offset-y
 end;
 
+function ParseOutline(const Src: ThtString; EmSize, ExSize, PPI: Integer;
+  out Width, OutColor: Integer): Boolean;
+// Parses the "outline" shorthand "<width> <style> <color>". v1 always draws it
+// solid (the style keyword is accepted but not distinguished); none/hidden = off.
+var
+  S, Lo, ColStr, Tok: ThtString;
+  PC, PP, SP: Integer;
+  Op: Byte;
+  C: TColor;
+  Ch: ThtChar;
+  HaveWidth: Boolean;
+begin
+  Width := 0; OutColor := clBlack; Result := False;
+  S := htTrim(Src);
+  if (S = '') or (htCompareText(S, 'none') = 0) then
+    Exit;
+  Lo := htLowerCase(S);
+  ColStr := '';
+  PC := htPos('rgb', Lo);
+  if PC = 0 then
+    PC := htPos('hsl', Lo);
+  if PC > 0 then
+  begin
+    PP := htPos(')', S);
+    if PP >= PC then
+    begin
+      ColStr := Copy(S, PC, PP - PC + 1);
+      Delete(S, PC, PP - PC + 1);
+    end;
+  end;
+  S := htTrim(S);
+  HaveWidth := False;
+  while S <> '' do
+  begin
+    SP := htPos(' ', S);
+    if SP = 0 then
+    begin
+      Tok := htTrim(S);
+      S := '';
+    end
+    else
+    begin
+      Tok := htTrim(Copy(S, 1, SP - 1));
+      S := htTrim(Copy(S, SP + 1, Length(S)));
+    end;
+    if Tok = '' then
+      Continue;
+    if (htCompareText(Tok, 'none') = 0) or (htCompareText(Tok, 'hidden') = 0) then
+    begin
+      Width := 0;
+      Exit;
+    end;
+    Ch := Tok[1];
+    if (((Ch >= '0') and (Ch <= '9')) or (Ch = '.')) and not HaveWidth then
+    begin
+      Width := LengthConv(Tok, False, 0, EmSize, ExSize, 0, PPI);
+      HaveWidth := True;
+    end
+    else if htCompareText(Tok, 'thin') = 0 then
+    begin Width := MulDiv(1, PPI, 96); HaveWidth := True; end
+    else if htCompareText(Tok, 'medium') = 0 then
+    begin Width := MulDiv(3, PPI, 96); HaveWidth := True; end
+    else if htCompareText(Tok, 'thick') = 0 then
+    begin Width := MulDiv(5, PPI, 96); HaveWidth := True; end
+    else if (htCompareText(Tok, 'solid') = 0) or (htCompareText(Tok, 'dotted') = 0)
+         or (htCompareText(Tok, 'dashed') = 0) or (htCompareText(Tok, 'double') = 0)
+         or (htCompareText(Tok, 'groove') = 0) or (htCompareText(Tok, 'ridge') = 0)
+         or (htCompareText(Tok, 'inset') = 0) or (htCompareText(Tok, 'outset') = 0) then
+      Continue // style keyword: v1 draws solid
+    else if ColStr = '' then
+      ColStr := Tok;
+  end;
+  if not HaveWidth then
+    Width := MulDiv(3, PPI, 96); // CSS default outline-width is 'medium'
+  if ColStr <> '' then
+    if ColorAndOpacityFromString(ColStr, False, C, Op) then
+      OutColor := C;
+  Result := Width > 0;
+end;
+
 constructor TBlock.Create(Parent: TCellBasic; Attributes: TAttributeList; Prop: TProperties);
 var
   S: ThtString;
@@ -4973,6 +5055,11 @@ begin
   if VarIsStr(Prop.Props[piBoxShadow]) then
     FHasShadow := ParseBoxShadow(Prop.Props[piBoxShadow], Prop.EmSize, Prop.ExSize, Document.PixelsPerInch,
       FShadowX, FShadowY, FShadowBlur, FShadowColor, FShadowAlpha);
+  FHasOutline := False;
+  FOutlineWidth := 0; FOutlineColor := clBlack;
+  if VarIsStr(Prop.Props[piOutline]) then
+    FHasOutline := ParseOutline(Prop.Props[piOutline], Prop.EmSize, Prop.ExSize, Document.PixelsPerInch,
+      FOutlineWidth, FOutlineColor);
 
   BlockTitle := Prop.PropTitle;
   if not (Self is TBodyBlock) and not (Self is TTableAndCaptionBlock)
@@ -6340,6 +6427,20 @@ begin
       end;
     end;
     DrawBlockBorder(Canvas, MyRect, PdRect);
+    if FHasOutline and (FOutlineWidth > 0) then
+    begin {CSS outline: just outside the border box; does not affect layout}
+      Canvas.Brush.Style := bsClear;
+      Canvas.Pen.Style := psSolid;
+      Canvas.Pen.Width := FOutlineWidth;
+      Canvas.Pen.Color := Document.ThemedColorToRGB(FOutlineColor, htseClient);
+      if FBorderRadius > 0 then
+        Canvas.RoundRect(MyRect.Left - FOutlineWidth div 2, MyRect.Top - FOutlineWidth div 2,
+          MyRect.Right + FOutlineWidth div 2, MyRect.Bottom + FOutlineWidth div 2,
+          2 * (FBorderRadius + FOutlineWidth div 2), 2 * (FBorderRadius + FOutlineWidth div 2))
+      else
+        Canvas.Rectangle(MyRect.Left - FOutlineWidth div 2, MyRect.Top - FOutlineWidth div 2,
+          MyRect.Right + FOutlineWidth div 2, MyRect.Bottom + FOutlineWidth div 2);
+    end;
   finally
     if SaveRgn1 <> 0 then
     begin

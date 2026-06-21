@@ -109,6 +109,7 @@ type
     WordWrap, FontVariant, BorderCollapse, OverFlow, piDisplay, piEmptyCells,
     piBorderRadius,
     piBoxShadow,
+    piOutline,
     piWhiteSpace,
 
     // the below properties are short hands
@@ -156,6 +157,7 @@ const
     'word-wrap', 'font-variant', 'border-collapse', 'overflow', 'display', 'empty-cells',
     'border-radius',
     'box-shadow',
+    'outline',
     'white-space',
 
     // short hand names
@@ -965,7 +967,7 @@ begin
         BorderCollapse,
         PageBreakBefore, PageBreakAfter, PageBreakInside,
         Clear, Float, Position, OverFlow, piDisplay,
-        piBorderRadius, piBoxShadow: // not inherited properties
+        piBorderRadius, piBoxShadow, piOutline: // not inherited properties
           ; {do nothing}
       else
         Props[I] := Source.Props[I];
