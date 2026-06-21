@@ -16,7 +16,7 @@
   a     { color: #2b5797; }
   code  { background: #eef2f6; padding: 1px 4px; }
   .summary { background: #eef7ee; border: 2px solid #4a8f4a; border-radius: 10px; padding: 12px 16px; margin-top: 14px; }
-  .filled  { background: #2b5797; color: #ffffff; border-radius: 16px; padding: 12px 16px; margin-top: 10px; }
+  .rt      { background: #eef2f6; padding: 8px 14px; margin: 8px 0; }
 </style>
 </head>
 <body>
@@ -47,8 +47,15 @@
     </ul>
 
     <h3>border-radius (new)</h3>
-    <div class="summary"><b>Order summary</b> &ndash; rounded box with a 2px solid border.</div>
-    <div class="filled">Filled rounded box, no border.</div>
+    <div class="summary"><b>Order summary</b> &ndash; rounded box, 2px solid border (the real use case).</div>
+
+    <p class="sub">Corner-alignment matrix &ndash; the border should hug the rounded background at every width, and the filled box's corners should be clean:</p>
+    <div class="rt" style="border: 1px solid #888888; border-radius: 8px">radius 8px &middot; border 1px</div>
+    <div class="rt" style="border: 3px solid #888888; border-radius: 8px">radius 8px &middot; border 3px</div>
+    <div class="rt" style="border: 6px solid #c0504d; border-radius: 8px">radius 8px &middot; border 6px (thick &ndash; best test for the inset math)</div>
+    <div class="rt" style="border: 2px solid #4a8f4a; border-radius: 20px">radius 20px &middot; border 2px</div>
+    <div class="rt" style="border: 2px solid #2b5797; border-radius: 28px">radius 28px &middot; border 2px (pill)</div>
+    <div class="rt" style="border: 0; background: #2b5797; color: #ffffff; border-radius: 12px">radius 12px &middot; no border (filled)</div>
 
     <p class="sub">Or type any URL in the address bar above.</p>
   </div>
