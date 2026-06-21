@@ -1405,6 +1405,9 @@ begin
         // Retain the source (all load paths, not just the Text property) so
         // Retext / responsive @media can re-parse without re-fetching, and so
         // DocumentSource works for stream- and url-loaded documents too.
+        // AsString reads from the buffer's current position, which parsing has
+        // advanced to the end, so rewind past any BOM first.
+        FDocument.Position := FDocument.BomLength;
         FText := FDocument.AsString;
         CheckVisitedLinks;
         if not PositionTo(Dest) and ((FCurrentFile = '') or (FCurrentFile <> OldFile)) then
