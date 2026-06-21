@@ -386,6 +386,7 @@ procedure ApplyBoxSettings(var AMarg : ThtMarginArray; const AUseQuirksMode : Bo
 //here for inlining
 function SkipWhiteSpace(const S: ThtString; I, L: Integer): Integer;
 function FontSizeConv(const Str: ThtString; OldSize, DefFontSizeInPt: Double; PixelsPerInch: Integer; const AUseQuirksMode : Boolean): Double;
+function EvalCalc(const Expr: ThtString; Base, EmSize, ExSize, PixelsPerInch: Integer; out OutVal: Double): Boolean;
 function LengthConv(const Str: ThtString; Relative: Boolean; Base, EmSize, ExSize, Default, PixelsPerInch: Integer): Integer;
 
 procedure CalcAutoMinMaxConstraints(W, H, MinW, MaxW, MinH, MaxH: Integer; out ResW, ResH: Integer);
@@ -4223,6 +4224,216 @@ end;
 
 {----------------LengthConv}
 
+function EvalCalc(const Expr: ThtString; Base, EmSize, ExSize, PixelsPerInch: Integer; out OutVal: Double): Boolean;
+// Evaluate a CSS calc() expression (the text inside, or including, the outer
+// parentheses) to a pixel value. Supports + - * / and nesting, with the same
+// length units LengthConv understands (px % in cm mm pt pc em ex rem vw vh
+// vmin vmax); a unitless number is a plain factor. Returns False on a parse
+// error, in which case OutVal is undefined.
+type
+  TCalcTokKind = (ctNum, ctPlus, ctMinus, ctMul, ctDiv, ctLP, ctRP, ctEnd);
+  TCalcTok = record
+    Kind: TCalcTokKind;
+    Num: Double;
+    Unt: ThtString;
+  end;
+var
+  Toks: array of TCalcTok;
+  NTok, Cur: Integer;
+  OK: Boolean;
+
+  procedure AddTok(AKind: TCalcTokKind; ANum: Double; const AUnt: ThtString);
+  begin
+    if NTok = Length(Toks) then
+      SetLength(Toks, NTok + 16);
+    Toks[NTok].Kind := AKind;
+    Toks[NTok].Num := ANum;
+    Toks[NTok].Unt := AUnt;
+    Inc(NTok);
+  end;
+
+  procedure Tokenize(const S: ThtString);
+  var
+    I, L, J: Integer;
+    Code: Integer;
+    Num: Double;
+    Unt: ThtString;
+  begin
+    I := 1;
+    L := Length(S);
+    while I <= L do
+    begin
+      case S[I] of
+        ' ', #9, #10, #13:
+          Inc(I);
+        '+': begin AddTok(ctPlus,  0, ''); Inc(I); end;
+        '-': begin AddTok(ctMinus, 0, ''); Inc(I); end;
+        '*': begin AddTok(ctMul,   0, ''); Inc(I); end;
+        '/': begin AddTok(ctDiv,   0, ''); Inc(I); end;
+        '(': begin AddTok(ctLP,    0, ''); Inc(I); end;
+        ')': begin AddTok(ctRP,    0, ''); Inc(I); end;
+        '0'..'9', '.':
+          begin
+            J := I;
+            while (I <= L) and (((S[I] >= '0') and (S[I] <= '9')) or (S[I] = '.')) do
+              Inc(I);
+            Val(Copy(S, J, I - J), Num, Code);
+            if Code <> 0 then
+            begin
+              OK := False;
+              Exit;
+            end;
+            Unt := '';
+            while (I <= L) and ((S[I] = '%') or ((S[I] >= 'a') and (S[I] <= 'z')) or ((S[I] >= 'A') and (S[I] <= 'Z'))) do
+            begin
+              Unt := Unt + S[I];
+              Inc(I);
+            end;
+            AddTok(ctNum, Num, htLowerCase(Unt));
+          end;
+      else
+        OK := False;
+        Exit;
+      end;
+    end;
+    AddTok(ctEnd, 0, '');
+  end;
+
+  function UnitPx(V: Double; const U: ThtString): Double;
+  begin
+    if U = '%' then
+      Result := V * Base * f_pc
+    else if U = 'px' then
+      Result := V
+    else if U = 'in' then
+      Result := V * PixelsPerInch
+    else if U = 'cm' then
+      Result := V * PixelsPerInch * f_cm
+    else if U = 'mm' then
+      Result := V * PixelsPerInch * f_mm
+    else if U = 'pt' then
+      Result := V * PixelsPerInch * f_pt
+    else if U = 'pc' then
+      Result := V * PixelsPerInch * f_px
+    else if U = 'em' then
+      Result := V * EmSize
+    else if U = 'ex' then
+      Result := V * ExSize
+    else if U = 'rem' then
+    begin
+      if ThtRootEmPx > 0 then
+        Result := V * ThtRootEmPx
+      else
+        Result := V * EmSize;
+    end
+    else if U = 'vw' then
+      Result := V * ThtViewportWidthPx * f_pc
+    else if U = 'vh' then
+      Result := V * ThtViewportHeightPx * f_pc
+    else if U = 'vmin' then
+    begin
+      if ThtViewportWidthPx < ThtViewportHeightPx then
+        Result := V * ThtViewportWidthPx * f_pc
+      else
+        Result := V * ThtViewportHeightPx * f_pc;
+    end
+    else if U = 'vmax' then
+    begin
+      if ThtViewportWidthPx > ThtViewportHeightPx then
+        Result := V * ThtViewportWidthPx * f_pc
+      else
+        Result := V * ThtViewportHeightPx * f_pc;
+    end
+    else
+    begin
+      OK := False;
+      Result := 0;
+    end;
+  end;
+
+  function ParseExpr: Double; forward;
+
+  function ParseFactor: Double;
+  begin
+    Result := 0;
+    case Toks[Cur].Kind of
+      ctMinus: begin Inc(Cur); Result := -ParseFactor; end;
+      ctPlus:  begin Inc(Cur); Result :=  ParseFactor; end;
+      ctLP:
+        begin
+          Inc(Cur);
+          Result := ParseExpr;
+          if Toks[Cur].Kind = ctRP then
+            Inc(Cur)
+          else
+            OK := False;
+        end;
+      ctNum:
+        begin
+          if Toks[Cur].Unt = '' then
+            Result := Toks[Cur].Num
+          else
+            Result := UnitPx(Toks[Cur].Num, Toks[Cur].Unt);
+          Inc(Cur);
+        end;
+    else
+      OK := False;
+    end;
+  end;
+
+  function ParseTerm: Double;
+  var
+    R: Double;
+  begin
+    Result := ParseFactor;
+    while OK and (Toks[Cur].Kind in [ctMul, ctDiv]) do
+      if Toks[Cur].Kind = ctMul then
+      begin
+        Inc(Cur);
+        Result := Result * ParseFactor;
+      end
+      else
+      begin
+        Inc(Cur);
+        R := ParseFactor;
+        if R <> 0 then
+          Result := Result / R
+        else
+          OK := False;
+      end;
+  end;
+
+  function ParseExpr: Double;
+  begin
+    Result := ParseTerm;
+    while OK and (Toks[Cur].Kind in [ctPlus, ctMinus]) do
+      if Toks[Cur].Kind = ctPlus then
+      begin
+        Inc(Cur);
+        Result := Result + ParseTerm;
+      end
+      else
+      begin
+        Inc(Cur);
+        Result := Result - ParseTerm;
+      end;
+  end;
+
+begin
+  OK := True;
+  NTok := 0;
+  Tokenize(Expr);
+  OutVal := 0;
+  if not OK then
+  begin
+    Result := False;
+    Exit;
+  end;
+  Cur := 0;
+  OutVal := ParseExpr;
+  Result := OK and (Toks[Cur].Kind = ctEnd);
+end;
+
 function LengthConv(const Str: ThtString; Relative: Boolean; Base, EmSize, ExSize, Default, PixelsPerInch: Integer): Integer;
  {$ifdef UseInline} inline; {$endif}
 {given a length ThtString, return the appropriate pixel value.  Base is the
@@ -4232,7 +4443,17 @@ function LengthConv(const Str: ThtString; Relative: Boolean; Base, EmSize, ExSiz
 var
   V: Extended;
   U: ThtString;
+  Cd: Double;
 begin
+  // CSS calc(): evaluate the parenthesised expression with the current bases.
+  if (Length(Str) >= 6) and ((Str[1] = 'c') or (Str[1] = 'C')) and (htLowerCase(Copy(Str, 1, 5)) = 'calc(') then
+  begin
+    if EvalCalc(Copy(Str, 5, MaxInt), Base, EmSize, ExSize, PixelsPerInch, Cd) then
+      Result := Trunc(Cd)
+    else
+      Result := Default;
+    Exit;
+  end;
   if DecodeSize(Str, V, U) then
   begin
     {U the units}
