@@ -65,8 +65,9 @@
     <div class="sh" style="border: 1px solid #d0d7de; box-shadow: 5px 5px 12px rgba(43,87,151,0.45)">offset blue shadow &middot; 5px 5px 12px</div>
 
     <h3>outline (new)</h3>
-    <div class="ol" style="outline: 3px solid #c0504d">3px solid outline &ndash; drawn outside the border, no layout shift</div>
-    <div class="ol" style="outline: 2px solid #2b5797">2px outline following the rounded border</div>
+    <p class="sub">A solid outline looks like a border on its own &ndash; the point is it sits <i>outside</i> the border and, with outline-offset, leaves a gap. These boxes have a grey border AND a coloured outline:</p>
+    <div class="ol" style="border: 2px solid #999999; outline: 3px solid #c0504d; outline-offset: 7px">grey border + red outline, 7px gap (outline-offset)</div>
+    <div class="ol" style="border: 2px solid #999999; outline: 2px solid #2b5797; outline-offset: 5px">grey border + blue outline, 5px gap, rounded</div>
 
     <p class="sub">Or type any URL in the address bar above. The card itself now has a soft shadow too.</p>
   </div>

@@ -110,6 +110,7 @@ type
     piBorderRadius,
     piBoxShadow,
     piOutline,
+    piOutlineOffset,
     piWhiteSpace,
 
     // the below properties are short hands
@@ -158,6 +159,7 @@ const
     'border-radius',
     'box-shadow',
     'outline',
+    'outline-offset',
     'white-space',
 
     // short hand names
@@ -967,7 +969,7 @@ begin
         BorderCollapse,
         PageBreakBefore, PageBreakAfter, PageBreakInside,
         Clear, Float, Position, OverFlow, piDisplay,
-        piBorderRadius, piBoxShadow, piOutline: // not inherited properties
+        piBorderRadius, piBoxShadow, piOutline, piOutlineOffset: // not inherited properties
           ; {do nothing}
       else
         Props[I] := Source.Props[I];

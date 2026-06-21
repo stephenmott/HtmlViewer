@@ -929,7 +929,7 @@ type
     FHasShadow: Boolean;
     FShadowX, FShadowY, FShadowBlur, FShadowColor, FShadowAlpha: Integer; // box-shadow (move() region)
     FHasOutline: Boolean;
-    FOutlineWidth, FOutlineColor: Integer; // outline (move() region)
+    FOutlineWidth, FOutlineColor, FOutlineOffset: Integer; // outline (move() region)
     HasBorderStyle: Boolean;
 
     PRec: PtPositionRec; // background image position
@@ -5056,10 +5056,12 @@ begin
     FHasShadow := ParseBoxShadow(Prop.Props[piBoxShadow], Prop.EmSize, Prop.ExSize, Document.PixelsPerInch,
       FShadowX, FShadowY, FShadowBlur, FShadowColor, FShadowAlpha);
   FHasOutline := False;
-  FOutlineWidth := 0; FOutlineColor := clBlack;
+  FOutlineWidth := 0; FOutlineColor := clBlack; FOutlineOffset := 0;
   if VarIsStr(Prop.Props[piOutline]) then
     FHasOutline := ParseOutline(Prop.Props[piOutline], Prop.EmSize, Prop.ExSize, Document.PixelsPerInch,
       FOutlineWidth, FOutlineColor);
+  if FHasOutline and VarIsStr(Prop.Props[piOutlineOffset]) then
+    FOutlineOffset := LengthConv(Prop.Props[piOutlineOffset], False, 0, Prop.EmSize, Prop.ExSize, 0, Document.PixelsPerInch);
 
   BlockTitle := Prop.PropTitle;
   if not (Self is TBodyBlock) and not (Self is TTableAndCaptionBlock)
@@ -6433,13 +6435,21 @@ begin
       Canvas.Pen.Style := psSolid;
       Canvas.Pen.Width := FOutlineWidth;
       Canvas.Pen.Color := Document.ThemedColorToRGB(FOutlineColor, htseClient);
+      // inset = outline-offset (gap from the border) + half the pen width (pen is centred)
       if FBorderRadius > 0 then
-        Canvas.RoundRect(MyRect.Left - FOutlineWidth div 2, MyRect.Top - FOutlineWidth div 2,
-          MyRect.Right + FOutlineWidth div 2, MyRect.Bottom + FOutlineWidth div 2,
-          2 * (FBorderRadius + FOutlineWidth div 2), 2 * (FBorderRadius + FOutlineWidth div 2))
+        Canvas.RoundRect(
+          MyRect.Left   - (FOutlineOffset + FOutlineWidth div 2),
+          MyRect.Top    - (FOutlineOffset + FOutlineWidth div 2),
+          MyRect.Right  + (FOutlineOffset + FOutlineWidth div 2),
+          MyRect.Bottom + (FOutlineOffset + FOutlineWidth div 2),
+          2 * (FBorderRadius + FOutlineOffset + FOutlineWidth div 2),
+          2 * (FBorderRadius + FOutlineOffset + FOutlineWidth div 2))
       else
-        Canvas.Rectangle(MyRect.Left - FOutlineWidth div 2, MyRect.Top - FOutlineWidth div 2,
-          MyRect.Right + FOutlineWidth div 2, MyRect.Bottom + FOutlineWidth div 2);
+        Canvas.Rectangle(
+          MyRect.Left   - (FOutlineOffset + FOutlineWidth div 2),
+          MyRect.Top    - (FOutlineOffset + FOutlineWidth div 2),
+          MyRect.Right  + (FOutlineOffset + FOutlineWidth div 2),
+          MyRect.Bottom + (FOutlineOffset + FOutlineWidth div 2));
     end;
   finally
     if SaveRgn1 <> 0 then
