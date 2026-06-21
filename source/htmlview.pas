@@ -1402,6 +1402,10 @@ begin
         else
           ParseText;
         end;
+        // Retain the source (all load paths, not just the Text property) so
+        // Retext / responsive @media can re-parse without re-fetching, and so
+        // DocumentSource works for stream- and url-loaded documents too.
+        FText := FDocument.AsString;
         CheckVisitedLinks;
         if not PositionTo(Dest) and ((FCurrentFile = '') or (FCurrentFile <> OldFile)) then
         begin
