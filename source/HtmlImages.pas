@@ -57,7 +57,11 @@ uses
   HTMLGif2,
   StyleTypes,
 {$ifdef Compiler20_Plus}
+  {$ifdef Compiler23_Plus}
+  Vcl.Imaging.PngImage, // qualified: a stray unqualified pngimage.dcu on the lib path must not shadow the RTL unit
+  {$else}
   PngImage,
+  {$endif}
 {$endif}
   DitherUnit;
 

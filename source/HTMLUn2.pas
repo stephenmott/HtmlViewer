@@ -840,7 +840,7 @@ uses
   System.UITypes,
   {$endif}
   {$ifndef FPC_TODO}jpeg, {$endif}
-  {$IFDEF UNICODE} PngImage, {$ENDIF}
+  {$IFDEF UNICODE} {$ifdef Compiler23_Plus} Vcl.Imaging.PngImage, {$else} PngImage, {$endif} {$ENDIF}
   DitherUnit, StylePars;
 
 type
