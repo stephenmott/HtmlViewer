@@ -14,7 +14,7 @@ Win32 and Win64.
 
 What to look at
 ---------------
-BrowserMain.pas builds everything in code (no .dfm) so the wiring is obvious:
+frmBrowserMain.pas holds the wiring (UI is on the form, frmBrowserMain.dfm):
 
   1. Create one ThtConnectionManager.
   2. Create one connector per protocol and point each at the manager:

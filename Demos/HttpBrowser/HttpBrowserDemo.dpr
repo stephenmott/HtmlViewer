@@ -2,7 +2,7 @@ program HttpBrowserDemo;
 
 uses
   Vcl.Forms,
-  BrowserMain in 'BrowserMain.pas';
+  frmBrowserMain in 'frmBrowserMain.pas' {TBrowserForm};
 
 {$R *.res}
 
