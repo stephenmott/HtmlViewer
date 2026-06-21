@@ -45,6 +45,9 @@ uses
   BegaZoom,
 {$endif}
   UrlConn,
+{$ifdef Compiler29_Plus}
+  UrlConnHttp,
+{$endif}
   HtmlView,
   FramView,
   FramBrwz;
@@ -70,6 +73,9 @@ begin
     ThtConnectionManager,
     ThtFileConnector,
     ThtResourceConnector,
+{$ifdef Compiler29_Plus}
+    ThtHttpConnector,
+{$endif}
     THtmlViewer,
     TFrameViewer,
     TFrameBrowser]);

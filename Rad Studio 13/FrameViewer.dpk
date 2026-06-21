@@ -12,8 +12,8 @@ package FrameViewer;
 {$LONGSTRINGS ON}
 {$OPENSTRINGS ON}
 {$OPTIMIZATION OFF}
-{$OVERFLOWCHECKS OFF}
-{$RANGECHECKS OFF}
+{$OVERFLOWCHECKS ON}
+{$RANGECHECKS ON}
 {$REFERENCEINFO ON}
 {$SAFEDIVIDE OFF}
 {$STACKFRAMES ON}
@@ -28,48 +28,50 @@ package FrameViewer;
 {$RUNONLY}
 {$IMPLICITBUILD OFF}
 
-requires
+REQUIRES
   rtl,
   vcl,
   vclimg,
   soaprtl,
   VclSmp;
 
-contains
-  BegaHtmlPrintPreviewForm in '..\source\BegaHtmlPrintPreviewForm.pas',
-  BegaMetaFilePrinter in '..\source\BegaMetaFilePrinter.pas',
-  BegaPreview in '..\source\BegaPreview.pas',
-  BegaPreviewForm in '..\source\BegaPreviewForm.pas' {BegaCustomPrintPreviewForm},
-  BegaPreviewPanel in '..\source\BegaPreviewPanel.pas',
-  BegaScrollBox in '..\source\BegaScrollBox.pas',
-  BegaZoom in '..\source\BegaZoom.pas',
-  BuffConv in '..\source\BuffConv.pas',
-  BuffConvArrays in '..\source\BuffConvArrays.pas',
-  DitherUnit in '..\source\DitherUnit.pas',
-  FramBrwz in '..\source\FramBrwz.pas',
-  framview in '..\source\framview.pas',
-  GDIPL2A in '..\source\GDIPL2A.pas',
-  HSLUtils in '..\source\HSLUtils.pas',
-  HtmlBuffer in '..\source\HtmlBuffer.pas',
-  HtmlCaches in '..\source\HtmlCaches.pas',
-  HtmlFonts in '..\source\HtmlFonts.pas',
-  htmlgif1 in '..\source\htmlgif1.pas',
-  HTMLGif2 in '..\source\HTMLGif2.pas',
-  HtmlGlobals in '..\source\HtmlGlobals.pas',
-  HtmlImages in '..\source\HtmlImages.pas',
-  Htmlsbs1 in '..\source\Htmlsbs1.pas',
-  HTMLSubs in '..\source\HTMLSubs.pas',
-  HtmlSymb in '..\source\HtmlSymb.pas',
-  HTMLUn2 in '..\source\HTMLUn2.pas',
-  htmlview in '..\source\htmlview.pas',
-  MetaFilePrinter in '..\source\MetaFilePrinter.pas',
-  ReadHTML in '..\source\ReadHTML.pas',
-  StylePars in '..\source\StylePars.pas',
-  StyleTypes in '..\source\StyleTypes.pas',
-  StyleUn in '..\source\StyleUn.pas',
-  URLSubs in '..\source\URLSubs.pas',
-  UrlConn in '..\Source\UrlConn.pas',
-  HtmlPrinter in '..\source\HtmlPrinter.pas',
-  vwPrint in '..\source\vwPrint.pas';
+CONTAINS
+  BegaHtmlPrintPreviewForm IN '..\source\BegaHtmlPrintPreviewForm.pas',
+  BegaMetaFilePrinter IN '..\source\BegaMetaFilePrinter.pas',
+  BegaPreview IN '..\source\BegaPreview.pas',
+  BegaPreviewForm IN '..\source\BegaPreviewForm.pas' {BegaCustomPrintPreviewForm},
+  BegaPreviewPanel IN '..\source\BegaPreviewPanel.pas',
+  BegaScrollBox IN '..\source\BegaScrollBox.pas',
+  BegaZoom IN '..\source\BegaZoom.pas',
+  BuffConv IN '..\source\BuffConv.pas',
+  BuffConvArrays IN '..\source\BuffConvArrays.pas',
+  DitherUnit IN '..\source\DitherUnit.pas',
+  FramBrwz IN '..\source\FramBrwz.pas',
+  framview IN '..\source\framview.pas',
+  GDIPL2A IN '..\source\GDIPL2A.pas',
+  HSLUtils IN '..\source\HSLUtils.pas',
+  HtmlBuffer IN '..\source\HtmlBuffer.pas',
+  HtmlCaches IN '..\source\HtmlCaches.pas',
+  HtmlFonts IN '..\source\HtmlFonts.pas',
+  htmlgif1 IN '..\source\htmlgif1.pas',
+  HTMLGif2 IN '..\source\HTMLGif2.pas',
+  HtmlGlobals IN '..\source\HtmlGlobals.pas',
+  HtmlImages IN '..\source\HtmlImages.pas',
+  Htmlsbs1 IN '..\source\Htmlsbs1.pas',
+  HTMLSubs IN '..\source\HTMLSubs.pas',
+  HtmlSymb IN '..\source\HtmlSymb.pas',
+  HTMLUn2 IN '..\source\HTMLUn2.pas',
+  htmlview IN '..\source\htmlview.pas',
+  MetaFilePrinter IN '..\source\MetaFilePrinter.pas',
+  ReadHTML IN '..\source\ReadHTML.pas',
+  StylePars IN '..\source\StylePars.pas',
+  StyleTypes IN '..\source\StyleTypes.pas',
+  StyleUn IN '..\source\StyleUn.pas',
+  URLSubs IN '..\source\URLSubs.pas',
+  UrlConn IN '..\Source\UrlConn.pas',
+  UrlConnHttp IN '..\source\UrlConnHttp.pas',
+  HtmlPrinter IN '..\source\HtmlPrinter.pas',
+  vwPrint IN '..\source\vwPrint.pas';
 
-end.
+END.
+

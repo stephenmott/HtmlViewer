@@ -12,8 +12,8 @@ package dclFrameViewer;
 {$LONGSTRINGS ON}
 {$OPENSTRINGS ON}
 {$OPTIMIZATION OFF}
-{$OVERFLOWCHECKS OFF}
-{$RANGECHECKS OFF}
+{$OVERFLOWCHECKS ON}
+{$RANGECHECKS ON}
 {$REFERENCEINFO ON}
 {$SAFEDIVIDE OFF}
 {$STACKFRAMES ON}
@@ -29,7 +29,7 @@ package dclFrameViewer;
 {$DESIGNONLY}
 {$IMPLICITBUILD ON}
 
-requires
+REQUIRES
   rtl,
   vcl,
   designide,
@@ -38,8 +38,9 @@ requires
   VclSmp,
   FrameViewer;
 
-contains
-  FrameViewerReg in '..\source\FrameViewerReg.pas',
-  HTMLCompEdit in '..\source\HTMLCompEdit.pas';
+CONTAINS
+  FrameViewerReg IN '..\source\FrameViewerReg.pas',
+  HTMLCompEdit IN '..\source\HTMLCompEdit.pas';
 
-end.
+END.
+
