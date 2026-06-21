@@ -21,6 +21,21 @@
   .ol      { background: #ffffff; border: 1px solid #d0d7de; border-radius: 8px; padding: 10px 14px; margin: 14px 0; }
   .ts1     { font-size: 28px; font-weight: bold; color: #2b5797; text-shadow: 2px 2px #b0b8c0; margin: 14px 0 4px 0; }
   .ts2     { font-size: 20px; color: #c0504d; text-shadow: 1px 1px #999999; margin: 4px 0; }
+
+  /* --- moderate tier --- */
+  :root { --brand: #2b5797; --accent: #c0504d; --pad: 14px; --radius: 10px; }
+  .mod        { background: #ffffff; border: 1px solid #d0d7de; border-radius: var(--radius); padding: var(--pad) calc(var(--pad) + 6px); margin: 12px 0; }
+  .v-brand    { color: var(--brand); font-weight: bold; }
+  .v-accent   { color: var(--accent); }
+  .v-fallback { color: var(--missing, #4a8f4a); }
+  .calc-box   { background: #eef2f6; border-radius: 8px; padding: 10px 14px; width: calc(100% - 80px); margin: 8px 0; }
+  .calc-half  { background: var(--brand); color: #ffffff; border-radius: 6px; padding: 8px 14px; width: calc(50% - 10px); margin: 8px 0; }
+  .rem-1      { font-size: 1rem; }
+  .rem-15     { font-size: 1.5rem; color: var(--brand); }
+  .rem-2      { font-size: 2rem; font-weight: bold; }
+  .resp       { border-radius: 8px; padding: 12px 16px; margin: 12px 0; background: #f4f6f8; border: 2px solid #aaaaaa; }
+  @media (min-width: 700px) { .resp { background: #eef7ee; border-color: #4a8f4a; } }
+  @media (max-width: 699px) { .resp { background: #fdecea; border-color: #c0504d; } }
 </style>
 </head>
 <body>
@@ -75,6 +90,30 @@
     <div class="ts1">Big heading with a text-shadow</div>
     <div class="ts2">Smaller line with a subtle shadow</div>
     <p style="text-shadow: 1px 1px #aaaaaa">Inherited &ndash; this paragraph's text-shadow applies to all its words, including <b>bold</b> and <i>italic</i> runs.</p>
+
+    <h3>Custom properties &ndash; var() (new)</h3>
+    <div class="mod">
+      <p class="v-brand">var(--brand) &ndash; this line uses the brand colour defined on <code>:root</code>.</p>
+      <p class="v-accent">var(--accent) &ndash; the accent colour.</p>
+      <p class="v-fallback">var(--missing, #4a8f4a) &ndash; the variable is undefined, so the green fallback is used.</p>
+      <p>This card's padding and corner radius come from <code>var(--pad)</code> and <code>var(--radius)</code>.</p>
+    </div>
+
+    <h3>calc() (new)</h3>
+    <div class="calc-box">width: <code>calc(100% - 80px)</code> &ndash; always 80px narrower than the card, at any window size.</div>
+    <div class="calc-half">width: <code>calc(50% - 10px)</code></div>
+    <p class="sub">The card's padding above also mixes a variable and a literal: <code>calc(var(--pad) + 6px)</code>.</p>
+
+    <h3>rem units (new)</h3>
+    <div class="mod">
+      <span class="rem-1">1rem</span> &middot;
+      <span class="rem-15">1.5rem</span> &middot;
+      <span class="rem-2">2rem</span>
+      <p class="sub">rem is relative to the document's root font size.</p>
+    </div>
+
+    <h3>@media (min-width) (new)</h3>
+    <div class="resp">Resize the window: this box turns <b>green</b> at &ge;&nbsp;700px wide and <b>red</b> below&nbsp;700px.</div>
 
     <p class="sub">Or type any URL in the address bar above. The card itself now has a soft shadow too.</p>
   </div>
