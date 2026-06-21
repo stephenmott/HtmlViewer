@@ -108,6 +108,7 @@ type
     PageBreakBefore, PageBreakAfter, PageBreakInside, TextTransform,
     WordWrap, FontVariant, BorderCollapse, OverFlow, piDisplay, piEmptyCells,
     piBorderRadius,
+    piBoxShadow,
     piWhiteSpace,
 
     // the below properties are short hands
@@ -154,6 +155,7 @@ const
     'page-break-before', 'page-break-after', 'page-break-inside', 'text-transform',
     'word-wrap', 'font-variant', 'border-collapse', 'overflow', 'display', 'empty-cells',
     'border-radius',
+    'box-shadow',
     'white-space',
 
     // short hand names
@@ -963,7 +965,7 @@ begin
         BorderCollapse,
         PageBreakBefore, PageBreakAfter, PageBreakInside,
         Clear, Float, Position, OverFlow, piDisplay,
-        piBorderRadius: // not an inherited property
+        piBorderRadius, piBoxShadow: // not inherited properties
           ; {do nothing}
       else
         Props[I] := Source.Props[I];

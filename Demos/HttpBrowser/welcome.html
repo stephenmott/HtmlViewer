@@ -6,7 +6,7 @@
 <style type="text/css">
   body  { font-family: "Segoe UI", Verdana, sans-serif; font-size: 17px;
           color: #222222; background: #f4f6f8; margin: 0; padding: 28px; }
-  .card { background: #ffffff; border: 1px solid #d0d7de; border-radius: 12px; padding: 20px 28px; }
+  .card { background: #ffffff; border: 1px solid #d0d7de; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); padding: 20px 28px; }
   h1    { color: #2b5797; margin: 0; font-size: 34px; }
   .sub  { color: #777777; margin: 4px 0 18px 0; font-size: 15px; }
   h3    { color: #2b5797; margin-bottom: 4px; font-size: 21px; }
@@ -17,6 +17,7 @@
   code  { background: #eef2f6; padding: 1px 4px; }
   .summary { background: #eef7ee; border: 2px solid #4a8f4a; border-radius: 10px; padding: 12px 16px; margin-top: 14px; }
   .rt      { background: #eef2f6; padding: 8px 14px; margin: 8px 0; }
+  .sh      { background: #ffffff; border-radius: 10px; padding: 12px 16px; margin: 14px 0; }
 </style>
 </head>
 <body>
@@ -57,7 +58,12 @@
     <div class="rt" style="border: 2px solid #2b5797; border-radius: 28px">radius 28px &middot; border 2px (pill)</div>
     <div class="rt" style="border: 0; background: #2b5797; color: #ffffff; border-radius: 12px">radius 12px &middot; no border (filled)</div>
 
-    <p class="sub">Or type any URL in the address bar above.</p>
+    <h3>box-shadow (new)</h3>
+    <div class="sh" style="box-shadow: 0 2px 6px rgba(0,0,0,0.35)">tight shadow &middot; 0 2px 6px</div>
+    <div class="sh" style="box-shadow: 0 8px 24px rgba(0,0,0,0.25)">soft elevated &middot; 0 8px 24px</div>
+    <div class="sh" style="border: 1px solid #d0d7de; box-shadow: 5px 5px 12px rgba(43,87,151,0.45)">offset blue shadow &middot; 5px 5px 12px</div>
+
+    <p class="sub">Or type any URL in the address bar above. The card itself now has a soft shadow too.</p>
   </div>
 </body>
 </html>

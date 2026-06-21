@@ -51,6 +51,7 @@ CONTAINS
   GDIPL2A IN '..\source\GDIPL2A.pas',
   HSLUtils IN '..\source\HSLUtils.pas',
   HtmlBuffer IN '..\source\HtmlBuffer.pas',
+  HtmlBoxShadow IN '..\source\HtmlBoxShadow.pas',
   HtmlCaches IN '..\source\HtmlCaches.pas',
   HtmlFonts IN '..\source\HtmlFonts.pas',
   htmlgif1 IN '..\source\htmlgif1.pas',

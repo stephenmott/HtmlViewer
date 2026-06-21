@@ -926,6 +926,8 @@ type
     MargArray: ThtMarginArray;
     FGColor: Integer;
     FBorderRadius: Integer; // border-radius in pixels (0 = square); within the CreateCopy move() region
+    FHasShadow: Boolean;
+    FShadowX, FShadowY, FShadowBlur, FShadowColor, FShadowAlpha: Integer; // box-shadow (move() region)
     HasBorderStyle: Boolean;
 
     PRec: PtPositionRec; // background image position
@@ -1852,6 +1854,7 @@ uses
 {$IFNDEF NoGDIPlus}
   GDIPL2A,
 {$ENDIF}
+  HtmlBoxShadow,
   HtmlView,
 {$ifdef Compiler28_Plus}
  System.NetEncoding,
@@ -4865,6 +4868,82 @@ end;
 
 {----------------TBlock.Create}
 
+function ParseBoxShadow(const Src: ThtString; EmSize, ExSize, PPI: Integer;
+  out OffX, OffY, Blur, ShColor, Alpha: Integer): Boolean;
+// Parses "<x> <y> [blur] [spread] <color>"; supports rgb()/rgba()/hsl()/hsla()
+// and #hex / named colours. spread and 'inset' are ignored (outer shadow only).
+var
+  S, Lo, ColStr, Tok: ThtString;
+  PC, PP, SP, NumCount, V: Integer;
+  Op: Byte;
+  C: TColor;
+  Ch: ThtChar;
+begin
+  OffX := 0; OffY := 0; Blur := 0; ShColor := clGray; Alpha := 128;
+  Result := False;
+  S := htTrim(Src);
+  if (S = '') or (htCompareText(S, 'none') = 0) then
+    Exit;
+  Lo := htLowerCase(S);
+  ColStr := '';
+  // pull out a functional colour first (it contains spaces/commas)
+  PC := htPos('rgb', Lo);
+  if PC = 0 then
+    PC := htPos('hsl', Lo);
+  if PC > 0 then
+  begin
+    PP := htPos(')', S);
+    if PP >= PC then
+    begin
+      ColStr := Copy(S, PC, PP - PC + 1);
+      Delete(S, PC, PP - PC + 1);
+    end;
+  end;
+  // tokenize the rest: numbers are lengths, a non-number token is a #hex/name colour
+  S := htTrim(S);
+  NumCount := 0;
+  while S <> '' do
+  begin
+    SP := htPos(' ', S);
+    if SP = 0 then
+    begin
+      Tok := htTrim(S);
+      S := '';
+    end
+    else
+    begin
+      Tok := htTrim(Copy(S, 1, SP - 1));
+      S := htTrim(Copy(S, SP + 1, Length(S)));
+    end;
+    if Tok = '' then
+      Continue;
+    if htCompareText(Tok, 'inset') = 0 then
+      Continue;
+    Ch := Tok[1];
+    if ((Ch >= '0') and (Ch <= '9')) or (Ch = '-') or (Ch = '+') or (Ch = '.') then
+    begin
+      V := LengthConv(Tok, False, 0, EmSize, ExSize, 0, PPI);
+      case NumCount of
+        0: OffX := V;
+        1: OffY := V;
+        2: Blur := V;
+      end;
+      Inc(NumCount);
+    end
+    else if ColStr = '' then
+      ColStr := Tok;
+  end;
+  if Blur < 0 then
+    Blur := 0;
+  if ColStr <> '' then
+    if ColorAndOpacityFromString(ColStr, False, C, Op) then
+    begin
+      ShColor := C;
+      Alpha := Op;
+    end;
+  Result := NumCount >= 2; // need at least offset-x and offset-y
+end;
+
 constructor TBlock.Create(Parent: TCellBasic; Attributes: TAttributeList; Prop: TProperties);
 var
   S: ThtString;
@@ -4889,6 +4968,11 @@ begin
   FBorderRadius := 0;
   if VarIsStr(Prop.Props[piBorderRadius]) then
     FBorderRadius := LengthConv(Prop.Props[piBorderRadius], False, 0, Prop.EmSize, Prop.ExSize, 0, Document.PixelsPerInch);
+  FHasShadow := False;
+  FShadowX := 0; FShadowY := 0; FShadowBlur := 0; FShadowColor := clGray; FShadowAlpha := 0;
+  if VarIsStr(Prop.Props[piBoxShadow]) then
+    FHasShadow := ParseBoxShadow(Prop.Props[piBoxShadow], Prop.EmSize, Prop.ExSize, Document.PixelsPerInch,
+      FShadowX, FShadowY, FShadowBlur, FShadowColor, FShadowAlpha);
 
   BlockTitle := Prop.PropTitle;
   if not (Self is TBodyBlock) and not (Self is TTableAndCaptionBlock)
@@ -6155,6 +6239,8 @@ begin
   try
     if (MyRect.Top <= ARect.Bottom) and (MyRect.Bottom >= ARect.Top) then
     begin
+      if FHasShadow and not Document.Printing and not Document.NoOutput then
+        DrawBoxShadow(Canvas, MyRect, FShadowX, FShadowY, FShadowBlur, FBorderRadius, FShadowColor, FShadowAlpha);
       HasBackgroundColor := MargArray[BackgroundColor] <> clNone;
       try
         if NeedDoImageStuff and Assigned(BGImage) and (BGImage.Image <> DefImage) then
