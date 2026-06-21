@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>HtmlViewer demo</title>
+<style type="text/css">
+  body  { font-family: "Segoe UI", Verdana, sans-serif; font-size: 14px;
+          color: #222222; background: #f4f6f8; margin: 0; padding: 24px; }
+  .card { background: #ffffff; border: 1px solid #d0d7de; padding: 16px 22px; }
+  h1    { color: #2b5797; margin: 0; }
+  .sub  { color: #777777; margin: 2px 0 14px 0; }
+  h3    { color: #2b5797; margin-bottom: 4px; }
+  table { border-collapse: collapse; margin: 10px 0; }
+  th,td { border: 1px solid #d0d7de; padding: 6px 12px; text-align: left; }
+  th    { background: #eef2f6; }
+  a     { color: #2b5797; }
+  code  { background: #eef2f6; padding: 1px 4px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>HtmlViewer</h1>
+    <p class="sub">TFrameBrowser + ThtHttpConnector demo page</p>
+
+    <p>If you can read this, the demo fetched this page over <b>HTTPS</b> from
+       GitHub using the built-in <code>ThtHttpConnector</code>
+       (System.Net.HttpClient) &mdash; no JavaScript, no third-party libraries.</p>
+
+    <p>This page lives in the repo at <code>Demos/HttpBrowser/welcome.html</code>.</p>
+
+    <h3>What renders here</h3>
+    <table>
+      <tr><th>Feature</th><th>Shown by</th></tr>
+      <tr><td>Headings &amp; text</td><td>this page</td></tr>
+      <tr><td>CSS &ndash; colours, borders, fonts</td><td>the card &amp; table</td></tr>
+      <tr><td>Tables</td><td>this table</td></tr>
+      <tr><td>Links</td><td>the list below</td></tr>
+    </table>
+
+    <h3>Click a link, then try Back / Forward</h3>
+    <ul>
+      <li><a href="https://example.com">example.com</a> &ndash; minimal page</li>
+      <li><a href="https://info.cern.ch/hypertext/WWW/TheProject.html">The first web page (CERN, 1991)</a></li>
+      <li><a href="https://www.w3.org/TR/1998/REC-html40-19980424/">HTML 4.0 specification</a> &ndash; large, static</li>
+    </ul>
+
+    <p class="sub">Or type any URL in the address bar above.</p>
+  </div>
+</body>
+</html>
