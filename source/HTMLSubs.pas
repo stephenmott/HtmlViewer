@@ -13997,7 +13997,9 @@ var
           begin {hard (no-blur) text shadow: draw the run offset in the shadow colour, behind the real text}
             ShadowSave := Canvas.Font.Color;
             Canvas.Font.Color := Document.ThemedColorToRGB(FTextShadowColor, htseFont);
-            ExtTextOutW(Canvas.Handle, CPx + FTextShadowX, CPy + FTextShadowY, 0, nil, Start, Tmp, pDx);
+            // pDx isn't set up for this run yet (CharacterJustification runs below), so use nil:
+            // the shadow uses the font's natural advances, which track the text for normal content.
+            ExtTextOutW(Canvas.Handle, CPx + FTextShadowX, CPy + FTextShadowY, 0, nil, Start, Tmp, nil);
             Canvas.Font.Color := ShadowSave;
           end;
 
