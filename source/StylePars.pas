@@ -69,6 +69,7 @@ type
     procedure GetCollection(const GoodTermChars, BadTermChars: ThtString);
     procedure ProcessProperty(const Prop, Value: ThtString; IsImportant: Boolean); virtual; abstract;
     procedure ProcessPropertyOrShortHand(Prop, Value: ThtString; IsImportant: Boolean);
+    function ResolveVars(const Value: ThtString): ThtString; virtual; // resolve var(--x); base does nothing
   end;
 
   THtmlStyleTagParser = class(THtmlStyleParser)
@@ -80,6 +81,7 @@ type
     procedure GetSelectors;
   protected
     procedure ProcessProperty(const Prop, Value: ThtString; IsImportant: Boolean); override;
+    function ResolveVars(const Value: ThtString): ThtString; override;
   public
     constructor Create(const AUseQuirksMode : Boolean);
     destructor Destroy; override;
@@ -590,6 +592,13 @@ begin
   Value1 := LowerCaseUnquotedStr(htTrim(Value)); // leave quotes on for font
   Value := RemoveQuotes(Value1);
   Prop := htLowerCase(Prop);
+  // CSS custom properties: replace any var(--x[, fallback]) before further
+  // processing, so shorthands and typed values see resolved text.
+  if htPos('var(', Value) > 0 then
+  begin
+    Value := ResolveVars(Value);
+    Value1 := ResolveVars(Value1);
+  end;
   if FindShortHand(Prop, Index) then
     ProcessShortHand(Index, Prop, Value, Value1, IsImportant)
   else if Prop = 'font-family' then
@@ -600,6 +609,12 @@ begin
       Value := AddPath(Value);
     ProcessProperty(Prop, Value, IsImportant);
   end;
+end;
+
+function THtmlStyleParser.ResolveVars(const Value: ThtString): ThtString;
+begin
+  // Base parser has no custom-property context (e.g. inline style attributes).
+  Result := Value;
 end;
 
 procedure SplitString(Src: ThtString; out Dest: array of ThtString; out Count: integer);
@@ -1958,8 +1973,20 @@ procedure THtmlStyleTagParser.ProcessProperty(const Prop, Value: ThtString; IsIm
 var
   I: integer;
 begin
+  // CSS custom property declaration (--name: value): store it document-scoped
+  // rather than as a normal style property.
+  if (Length(Prop) >= 2) and (Prop[1] = '-') and (Prop[2] = '-') then
+  begin
+    Styles.SetVar(Prop, Value);
+    Exit;
+  end;
   for I := 0 to Selectors.Count - 1 do
     Styles.AddModifyProp(Selectors[I], Prop, Value, IsImportant);
+end;
+
+function THtmlStyleTagParser.ResolveVars(const Value: ThtString): ThtString;
+begin
+  Result := Styles.ResolveVars(Value);
 end;
 
 { THtmlStyleAttrParser }

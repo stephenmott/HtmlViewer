@@ -273,6 +273,7 @@ type
   private
     SeqNo: Integer;
     FDefProp: TProperties;
+    FVars: ThtStringList; // CSS custom properties (--name -> value), document scoped
   protected
     FDefFontSizeInPt : Double;
     FPixelsPerInch: Integer;
@@ -290,6 +291,9 @@ type
     function GetSeqNo: ThtString;
     procedure Clear; override;
     procedure AddModifyProp(const Selector, Prop, Value: ThtString; IsImportant: Boolean);
+    procedure SetVar(const Name, Value: ThtString);
+    function ResolveVars(const Value: ThtString): ThtString;
+    function RootEmSize: Integer;
     procedure FixupTableColor(BodyProp: TProperties);
     procedure Initialize(const FontName, PreFontName: ThtString; PointSize: Integer;
       AColor, AHotspot, AVisitedColor, AActiveColor: TColor; LinkUnderline: Boolean;
@@ -3188,6 +3192,7 @@ end;
 destructor TStyleList.Destroy;
 begin
   Clear;
+  FVars.Free;
   inherited Destroy;
 end;
 
@@ -3198,7 +3203,112 @@ begin
   for I := 0 to Count - 1 do
     TProperties(Objects[I]).Free;
   SeqNo := 10;
+  if FVars <> nil then
+    FVars.Clear;
   inherited;
+end;
+
+procedure TStyleList.SetVar(const Name, Value: ThtString);
+// Store a CSS custom property declaration (e.g. '--brand': '#2b5797').
+// Name keeps its leading '--' so it matches the var(--brand) reference verbatim.
+begin
+  if FVars = nil then
+    FVars := ThtStringList.Create;
+  FVars.Values[htTrim(htLowerCase(Name))] := Value;
+end;
+
+function TStyleList.RootEmSize: Integer;
+// Pixel size of one 'rem' = the document's default (root) font size.
+begin
+  Result := Round(FDefFontSizeInPt * FPixelsPerInch / 72.0);
+  if Result <= 0 then
+    Result := 16; // sensible default if not yet initialized
+end;
+
+function TStyleList.ResolveVars(const Value: ThtString): ThtString;
+// Replace every var(--name[, fallback]) in Value with the custom property's
+// value (or the fallback when the property is undefined). Resolves recursively
+// so a custom property may itself reference another var(). Define-before-use:
+// the referenced property must have been declared earlier in source order.
+
+  function ResolveOnce(const S: ThtString; Depth: Integer): ThtString;
+  var
+    I, J, L, P, ParenDepth, CommaP: Integer;
+    Inner, Name, Fallback, Repl: ThtString;
+    HasFallback: Boolean;
+  begin
+    Result := '';
+    L := Length(S);
+    I := 1;
+    while I <= L do
+    begin
+      if (I + 3 <= L) and (htLowerCase(Copy(S, I, 4)) = 'var(') then
+      begin
+        // find the matching ')' for this var(
+        P := I + 4;
+        ParenDepth := 1;
+        while (P <= L) and (ParenDepth > 0) do
+        begin
+          case S[P] of
+            '(': Inc(ParenDepth);
+            ')': begin Dec(ParenDepth); if ParenDepth = 0 then Break; end;
+          end;
+          Inc(P);
+        end;
+        if ParenDepth <> 0 then
+        begin
+          // unterminated var( ... copy the rest verbatim and stop
+          Result := Result + Copy(S, I, L - I + 1);
+          Break;
+        end;
+        Inner := Copy(S, I + 4, P - (I + 4));
+        // split Inner into name and optional fallback at the first top-level comma
+        CommaP := 0;
+        ParenDepth := 0;
+        for J := 1 to Length(Inner) do
+          case Inner[J] of
+            '(': Inc(ParenDepth);
+            ')': Dec(ParenDepth);
+            ',': if ParenDepth = 0 then begin CommaP := J; Break; end;
+          end;
+        if CommaP > 0 then
+        begin
+          Name := htTrim(Copy(Inner, 1, CommaP - 1));
+          Fallback := htTrim(Copy(Inner, CommaP + 1, MaxInt));
+          HasFallback := True;
+        end
+        else
+        begin
+          Name := htTrim(Inner);
+          Fallback := '';
+          HasFallback := False;
+        end;
+        Name := htLowerCase(Name);
+        if (FVars <> nil) and (FVars.IndexOfName(Name) >= 0) then
+          Repl := FVars.Values[Name]
+        else if HasFallback then
+          Repl := Fallback
+        else
+          Repl := '';
+        if Depth < 8 then
+          Repl := ResolveOnce(Repl, Depth + 1);
+        Result := Result + Repl;
+        // continue after the matching ')'
+        I := P + 1;
+      end
+      else
+      begin
+        Result := Result + S[I];
+        Inc(I);
+      end;
+    end;
+  end;
+
+begin
+  if (FVars = nil) or (htPos('var(', htLowerCase(Value)) = 0) then
+    Result := Value
+  else
+    Result := ResolveOnce(Value, 0);
 end;
 
 function TStyleList.GetSeqNo: ThtString;
