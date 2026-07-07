@@ -11949,7 +11949,11 @@ begin
         if FO.Pos = Length(BuffS) then
           Inc(FO.Pos);
         BuffS := BuffS + ' ';
-        //XP[Length(BuffS) - 1] := TagIndex;
+        // Record the source index of the appended trailing space. Do NOT remove:
+        // if left unset it stays 0, poisoning this section's last PosIndex entry so
+        // FindDocPos rejects anchors here and #name navigation over-scrolls into the
+        // following <table>.
+        XP[Length(BuffS) - 1] := TagIndex;
       end;
     end;
   end;

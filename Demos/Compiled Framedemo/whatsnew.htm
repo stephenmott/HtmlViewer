@@ -40,6 +40,7 @@
 </ul>                                                                            
 <h5>Fixed</h5>                                                                   
 <ul>
+  <li>Anchor/bookmark navigation (e.g. &lt;a href="#name"&gt;) over-scrolled past the target when a &lt;table&gt; immediately followed the anchor: the char-position anchor drifted to the end of the following table. TSection.ProcessText now records the source index of the appended trailing space (previously left at 0), so TSection.FindDocPos maps the anchor to its own section again.
   <li>FrameBrowser's URLExpandName() now respects Viewer.Base to get the correct scheme.
   <li>Function TSection.FindCountThatFits() seems to freeze when checking very long strings with some non unicode chars.
   <li>Crash when Document.IDNameList tries to delete an already deleted image again.
