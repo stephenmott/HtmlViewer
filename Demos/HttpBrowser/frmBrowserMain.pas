@@ -58,13 +58,13 @@ TYPE
     PROCEDURE ForwardClick(Sender: TObject);
     PROCEDURE BrowserHistoryChange(Sender: TObject);
   PRIVATE
+    { Private declarations }
     FDocStream: TMemoryStream;
     FImgStream: TMemoryStream;
     PROCEDURE WriteHtml(Target: TMemoryStream; CONST Html: AnsiString);
     PROCEDURE LoadViaConnectors(CONST URL, Query: ThtString; IsGet: Boolean;
       Target: TMemoryStream; OUT DocType: ThtDocType; OUT NewURL: ThtString);
     PROCEDURE Navigate(CONST URL: ThtString);
-    { Private declarations }
   PUBLIC
     { Public declarations }
   END;
@@ -97,7 +97,7 @@ BEGIN
   // Keep Back/Forward in sync after every navigation (address bar, links and
   // the buttons themselves).
   FBrowser.OnHistoryChange := BrowserHistoryChange;
-  FBrowser.HistoryMaxCount := 16;   // enable Back/Forward history (0 = none kept)
+  FBrowser.HistoryMaxCount := 16;       // enable Back/Forward history (0 = none kept)
   fBack.Enabled := False;
   fForward.Enabled := False;
 
@@ -120,9 +120,9 @@ END;
 PROCEDURE TBrowserForm.FormResize(Sender: TObject);
 VAR
   W                 : Integer;
-  Band              : string;
+  Band              : STRING;
 BEGIN
-  W := FBrowser.ClientWidth;             // device px - what @media is compared to
+  W := FBrowser.ClientWidth;            // device px - what @media is compared to
   IF W > 1000 THEN Band := 'green (>1000)'
   ELSE IF W > 700 THEN Band := 'amber (700-1000)'
   ELSE Band := 'red (<=700)';
